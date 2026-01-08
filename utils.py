@@ -71,7 +71,7 @@ def plot_generated_facies(
             ax = axes[i, c]
             img = real_facies[i, ..., c]
             
-            cmap = 'YlGn' if c == 0 else 'viridis'
+            cmap = 'YlGn' if c == 0 else 'jet'
             
             ax.imshow(img, cmap=cmap)
             ax.set_title(f'Well {i + 1} Ch{c}')
@@ -89,7 +89,7 @@ def plot_generated_facies(
                 ax = axes[i, col_idx]
                 img_fake = fake_facies[i][j][..., c]
                 
-                cmap = 'gray' if c == 0 else 'viridis'
+                cmap = 'YlGn' if c == 0 else 'jet'
                 
                 ax.imshow(img_fake, cmap=cmap)
                 ax.set_title(f'Gen {j + 1} Ch{c}')
