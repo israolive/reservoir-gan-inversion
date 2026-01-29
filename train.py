@@ -78,7 +78,16 @@ class Trainer:
 
         self.num_of_batchs: int = len(dataset) // self.batch_size
 
-        self.model: FaciesGAN = FaciesGAN(device, options, self.masked_facies)
+        # Compute Global Probability Maps for each scale
+        # P_R(X) = (1/Nr) * Sum(X_k)
+        # dataset.facies_pyramid[i] has shape (N, C, H, W)
+        self.real_prob_maps = []
+        for i in range(len(self.scales_list)):
+            # Mean across N dimension (dim 0)
+            prob_map = dataset.facies_pyramid[i].mean(dim=0, keepdim=True)
+            self.real_prob_maps.append(prob_map.to(device))
+
+        self.model: FaciesGAN = FaciesGAN(device, options, self.masked_facies, self.real_prob_maps)
         self.model.shapes = self.scales_list
 
         print("Generated facie shapes:")
@@ -179,14 +188,14 @@ class Trainer:
                    self.model.optimize_discriminator(mask_indexes, real, discriminator_optimizer)
                )
 
-               generator_loss, generator_loss_fake, generator_loss_rec, fake, rec = (
+               generator_loss, generator_loss_fake, generator_loss_rec, generator_loss_prob, fake, rec = (
                    self.model.optimize_generator(mask_indexes, real, mask, prev_rec, generator_optimizer)
                )
 
                self.__log_epoch(
                    epochs, writer, epoch, scale, batch_id, generator_loss, discriminator_loss,
                    discriminator_loss_real, discriminator_loss_fake, discriminator_loss_gp,
-                   generator_loss_fake, generator_loss_rec
+                   generator_loss_fake, generator_loss_rec, generator_loss_prob
                )
 
                if epoch % self.save_interval == 0 or epoch == self.num_iter:
@@ -319,7 +328,8 @@ class Trainer:
                     discriminator_loss_fake: float,
                     discriminator_loss_gp: float,
                     generator_loss_fake: float,
-                    generator_loss_rec: float) -> None:
+                    generator_loss_rec: float,
+                    generator_loss_prob: float) -> None:
         """
         Log the losses for the current epoch.
 
@@ -336,6 +346,7 @@ class Trainer:
             discriminator_loss_gp (float): The gradient penalty loss for the discriminator.
             generator_loss_fake (float): The generator loss for fake samples.
             generator_loss_rec (float): The reconstruction loss for the generator.
+            generator_loss_prob (float): The probability loss for the generator.
         """
         epochs.set_description("Stage [{}/{}] | Batch [{}/{}] | Loss [G: {:2.3f}| D: {:2.3f}] Epoch".format(
             scale + 1,
@@ -352,6 +363,7 @@ class Trainer:
         writer.add_scalar("Loss/train/discriminator", discriminator_loss, epoch)
         writer.add_scalar("Loss/train/generator/fake", generator_loss_fake, epoch)
         writer.add_scalar("Loss/train/generator/reconstruction", generator_loss_rec, epoch)
+        writer.add_scalar("Loss/train/generator/probability", generator_loss_prob, epoch)
         writer.add_scalar("Loss/train/generator", generator_loss, epoch)
 
     def __save_generated_facies(self, scale, epoch, results_path, mask):

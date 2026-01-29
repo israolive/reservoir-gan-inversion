@@ -57,6 +57,7 @@ def get_arguments():
     parser.add_argument("--discriminator_steps", type=int, help="Discriminator inner steps", default=3)
     parser.add_argument("--lambda_grad", type=float, help="gradient penalty weight", default=0.1)
     parser.add_argument("--alpha", type=float, help="reconstruction loss weight", default=10)
+    parser.add_argument("--beta", type=float, help="probability loss weight (VA-GAN)", default=0.01)
     parser.add_argument("--save_interval", type=int, help="save log interval", default=100)
     parser.add_argument("--num_real_facies", type=int,
                         help="Number of real facies to use in the grid plot", default=5)

@@ -15,7 +15,7 @@ from config import G_FILE, D_FILE, REC_FILE, AMP_FILE, SHAPE_FILE, M_FILE
 
 class FaciesGAN:
     def __init__(self, device: torch.device, options: argparse.Namespace | SimpleNamespace,
-                 masked_facies: list[torch.Tensor] = None, *args, **kwargs) -> None:
+                 masked_facies: list[torch.Tensor] = None, real_prob_maps: list[torch.Tensor] = None) -> None:
         """
         Initialize the FaciesGAN class.
 
@@ -23,9 +23,12 @@ class FaciesGAN:
             device (torch.device): The device to run the model on (CPU or GPU).
             options (argparse.Namespace): The options containing hyperparameters and configurations.
             masked_facies (torch.Tensor, optional): The masked facies tensor. Defaults to None.
+            real_prob_maps (list[torch.Tensor], optional): The real probability maps for each scale. Defaults to None.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.device = device
+        self.real_prob_maps = real_prob_maps
+        self.cur_scale = 0
 
         # Image parameters
         self.facie_num_channels = options.facie_num_channels
@@ -35,7 +38,9 @@ class FaciesGAN:
         self.discriminator_steps = options.discriminator_steps
         self.generator_steps = options.generator_steps
         self.lambda_grad = options.lambda_grad
+        self.lambda_grad = options.lambda_grad
         self.alpha = options.alpha
+        self.beta = options.beta
 
         # Network parameters
         self.num_feature = options.num_feature
@@ -214,10 +219,10 @@ class FaciesGAN:
             generator_optimizer (torch.optim.Optimizer): Optimizer for the generator.
 
         Returns:
-            tuple[float, float, float, torch.Tensor, torch.Tensor]: Total loss, fake loss, reconstruction loss,
+            tuple[float, float, float, float, torch.Tensor, torch.Tensor]: Total loss, fake loss, reconstruction loss, probability loss,
             generated fake images, and reconstructed images.
         """
-        generator_loss, generator_loss_fake, generator_loss_rec = 0.0, 0.0, 0.0
+        generator_loss, generator_loss_fake, generator_loss_rec, generator_loss_prob = 0.0, 0.0, 0.0, 0.0
         fake, rec = None, None
 
         for _ in range(self.generator_steps):
@@ -227,7 +232,7 @@ class FaciesGAN:
             fake = self.generator(noises, self.noise_amp)
 
             generator_loss_fake = -self.discriminator(fake).mean()
-            generator_loss_fake.backward()
+            # generator_loss_fake.backward() -> Moved to after prob loss
 
             generator_loss_rec = torch.zeros(1, device=self.device)
             rec = None
@@ -243,8 +248,34 @@ class FaciesGAN:
                 generator_loss_rec = self.alpha * nn.MSELoss()(rec, real)
                 generator_loss_rec.backward()
 
+            # Probability Loss (Variability Regularization)
+            # L_P = | P_m(G(z)) - P_R |_1
+            # P_m(G(z)) = fake.mean(dim=0)
+            if self.beta != 0 and self.real_prob_maps is not None:
+                fake_prob_map = fake.mean(dim=0, keepdim=True)
+                real_prob_map = self.real_prob_maps[self.cur_scale]
+                
+                # Ensure dimensions match (sometimes real_prob_map might have 1 channel if facies only, but fake has 2)
+                # If we only want to penalize Facies channel (channel 0):
+                # fake_prob_map = fake_prob_map[:, 0:1, :, :]
+                # real_prob_map = real_prob_map[:, 0:1, :, :]
+                
+                # Check if channels match, if not, slice appropriately or assuming only first channel matters?
+                # The paper usually refers to facies probability. 
+                # Our real_prob_maps has the same channels as real data (which might be 2 if detailed).
+                # Let's assume we want to match everything present in real_prob_map.
+                
+                generator_loss_prob = self.beta * nn.L1Loss()(fake_prob_map, real_prob_map)
+                
+            # Combine losses that depend on 'fake'
+            total_fake_loss = generator_loss_fake
+            if isinstance(generator_loss_prob, torch.Tensor):
+                total_fake_loss = total_fake_loss + generator_loss_prob
+            
+            total_fake_loss.backward()
+
             generator_masked_loss = 100 * self.alpha * nn.MSELoss(reduction="mean")(fake * mask, real * mask)
-            generator_loss = generator_masked_loss.item() + generator_loss_fake.item() + generator_loss_rec.item()
+            generator_loss = generator_masked_loss.item() + generator_loss_fake.item() + generator_loss_rec.item() + generator_loss_prob.item()
 
             generator_optimizer.step()
 
@@ -252,6 +283,7 @@ class FaciesGAN:
             generator_loss,
             generator_loss_fake.item(),
             generator_loss_rec.item(),
+            generator_loss_prob.item() if isinstance(generator_loss_prob, torch.Tensor) else generator_loss_prob,
             fake.detach(),
             rec.detach() if rec is not None else None
         )
