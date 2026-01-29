@@ -19,7 +19,13 @@ def facie_resize(facie: torch.Tensor, size: tuple[int, ...], ceiling=False) -> t
         torch.Tensor: The resized  tensor.
     """
     interpolated_facie = nn.functional.interpolate(facie, size=size, mode="bilinear", align_corners=True)
-    if ceiling: interpolated_facie[torch.where(interpolated_facie > 0)] = 1
+    if ceiling:
+        # Only apply ceiling to the first channel (Facies)
+        # Assuming shape is (N, C, H, W)
+        if interpolated_facie.shape[1] > 0:
+            facies_channel = interpolated_facie[:, 0:1, :, :]
+            facies_channel[facies_channel > 0] = 1
+            interpolated_facie[:, 0:1, :, :] = facies_channel
     return interpolated_facie
 
 

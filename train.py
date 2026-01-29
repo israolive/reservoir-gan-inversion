@@ -144,7 +144,7 @@ class Trainer:
                results_path (str): Path to save the generated facies.
                batch_id (int): The current batch index.
            """
-           mask_indexes = list(range(self.batch_size))
+           mask_indexes = list(range(self.facies[scale].shape[0]))
 
            real = self.facies[scale][mask_indexes].to(self.device)
            mask = self.masks[scale][mask_indexes].to(self.device)
