@@ -322,7 +322,7 @@ class FaciesGAN:
                 self.generator.gens[scale] = ops.reset_grads(self.generator.gens[scale])
                 self.generator.gens[scale].eval()
 
-                self.rec_noise.append(ops.load(os.path.join(path, str(scale), REC_FILE), self.device))
+                self.rec_noise = ops.load(os.path.join(path, str(scale), REC_FILE), self.device)
 
                 with open(os.path.join(path, str(scale), AMP_FILE)) as f:
                     self.noise_amp.append(float(f.readline().strip()))

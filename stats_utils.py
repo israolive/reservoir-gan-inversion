@@ -1,12 +1,13 @@
 import numpy as np
 
 
-def compute_variogram(data, max_lag=20, n_bins=20):
+def compute_variogram(data, mask=None, max_lag=20, n_bins=20):
     """
     Compute isotropic experimental semivariogram for 2D data.
     
     Args:
         data (np.ndarray): 2D array of values.
+        mask (np.ndarray, optional): Boolean mask. Only True values are used.
         max_lag (int): Maximum lag distance to consider (in pixels).
         n_bins (int): Number of bins for lag distances.
         
@@ -21,6 +22,11 @@ def compute_variogram(data, max_lag=20, n_bins=20):
     values = data.flatten()
     coords = np.column_stack((y.flatten(), x.flatten()))
     
+    if mask is not None:
+        flat_mask = mask.flatten()
+        values = values[flat_mask]
+        coords = coords[flat_mask]
+    
     # We can't compute pairwise distances for full image (too big: 65k*65k).
     # Instead, we sample indices if the image is large, 
     # OR we use a fast FFT-based approach or simplified axis-aligned approach.
@@ -28,6 +34,11 @@ def compute_variogram(data, max_lag=20, n_bins=20):
     # if total pixels > 2000 to keep it interactive.
     
     n_pixels = values.size
+    
+    # If not enough pixels, return NaNs
+    if n_pixels < 2:
+        return np.linspace(0, max_lag, n_bins + 1)[:-1], np.full(n_bins, np.nan)
+
     if n_pixels > 2500: # 50x50
         # Stratified sampling or just random sampling
         idx = np.random.choice(n_pixels, 2500, replace=False)
@@ -49,9 +60,9 @@ def compute_variogram(data, max_lag=20, n_bins=20):
     gammas = np.zeros(n_bins)
     
     for i in range(n_bins):
-        mask = (dists >= bins[i]) & (dists < bins[i+1])
-        if np.any(mask):
-            gammas[i] = 0.5 * np.mean(sq_diff[mask])
+        range_mask = (dists >= bins[i]) & (dists < bins[i+1])
+        if np.any(range_mask):
+            gammas[i] = 0.5 * np.mean(sq_diff[range_mask])
         else:
             gammas[i] = np.nan
             
