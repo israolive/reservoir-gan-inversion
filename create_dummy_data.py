@@ -17,7 +17,7 @@ def create_dss_acoustic_impedance():
     out_dir = "data"
     
     facies_path = 'data/facies.npy.gz'
-    output_path = 'data/acoustic_impedance.npy.gz'
+    output_path = 'data/ip.npy.gz'
 
     # Load Facies
     print(f"Loading facies from {facies_path}...")

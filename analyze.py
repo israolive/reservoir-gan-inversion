@@ -48,13 +48,13 @@ def load_real_data_resized(data_dir, target_shape):
     """
     Load raw real data (facies and AI) and resize to target_shape.
     params:
-        data_dir: Directory containing facies.npy.gz and acoustic_impedance.npy.gz
+        data_dir: Directory containing facies.npy.gz and ip.npy.gz
         target_shape: Tuple (H, W) for resizing
     returns:
         np.ndarray: (N, target_H, target_W, 2)
     """
     f_path = os.path.join(data_dir, 'facies.npy.gz')
-    ai_path = os.path.join(data_dir, 'acoustic_impedance.npy.gz')
+    ai_path = os.path.join(data_dir, 'ip.npy.gz')
     
     # Check existence
     if not os.path.exists(f_path):

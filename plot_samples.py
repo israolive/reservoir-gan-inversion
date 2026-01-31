@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import gzip
 import os
 
+
 def plot_samples(num_samples=10, output_file='sample_plot.png'):
     facies_path = 'data/facies.npy.gz'
-    ai_path = 'data/acoustic_impedance.npy.gz'
+    ai_path = 'data/ip.npy.gz'
     
     if not os.path.exists(facies_path):
         print(f"Error: {facies_path} not found.")
