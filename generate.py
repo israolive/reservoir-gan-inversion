@@ -176,7 +176,7 @@ if __name__ == "__main__":
             # I'll save raw data regardless.
 
     # Always save raw separate channels for analyze.py
-    for i, facie in enumerate(facies, 1):
+    for i, (facie, well_idx) in enumerate(zip(facies, mi), 1):
         # facie is (1, H, W, C)
         facie = facie.squeeze(0) # (H, W, C)
         
@@ -190,12 +190,12 @@ if __name__ == "__main__":
             facies_img = facie[..., 0]
             # Apply rounding to discrete facies
             facies_img = np.round(facies_img).astype(np.uint8)
-            tif.imwrite(os.path.join(arguments.out_path, f"sample_{i}_facies.tif"), facies_img)
+            tif.imwrite(os.path.join(arguments.out_path, f"sample_{i}_well_{well_idx}_facies.tif"), facies_img)
             
         # Channel 1: Acoustic Impedance
         if num_channels >= 2:
             ai_img = facie[..., 1]
-            tif.imwrite(os.path.join(arguments.out_path, f"sample_{i}_ai.tif"), ai_img)
+            tif.imwrite(os.path.join(arguments.out_path, f"sample_{i}_well_{well_idx}_ai.tif"), ai_img)
 
     print(f"Facies generated at '{os.path.join(arguments.out_path, 'sample_[i]_[facies|ai].tif')}'.")
     if arguments.plot_well_mask:

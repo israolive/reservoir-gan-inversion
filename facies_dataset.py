@@ -32,8 +32,13 @@ class FaciesDataset(Dataset):
         facies = np2torch(np.load(gzip.open(os.path.join(self.data_dir, 'facies.npy.gz'), 'rb')))
         masks = np2torch(np.load(gzip.open(os.path.join(self.data_dir, 'masks.npy.gz'), 'rb')))
 
-        if hasattr(options, 'acoustic_impedance_path') and options.acoustic_impedance_path:
-             acoustic_impedance = np.load(gzip.open(options.acoustic_impedance_path, 'rb'))
+        if hasattr(options, 'acoustic_impedance_path'):
+             ai_path = options.acoustic_impedance_path
+             if not ai_path or not os.path.exists(ai_path):
+                 ai_path = os.path.join(self.data_dir, 'ip.npy.gz')
+             
+             if ai_path and os.path.exists(ai_path):
+                 acoustic_impedance = np.load(gzip.open(ai_path, 'rb'))
              
              # Normalize AI to [0, 1] so np2torch can map it to [-1, 1]
              ai_min = acoustic_impedance.min()
