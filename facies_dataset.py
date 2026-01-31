@@ -44,6 +44,8 @@ class FaciesDataset(Dataset):
              ai_min = acoustic_impedance.min()
              ai_max = acoustic_impedance.max()
              print(f"Loaded Acoustic Impedance: Min={ai_min:.2f}, Max={ai_max:.2f}")
+             self.ip_min = ai_min
+             self.ip_max = ai_max
              
              if ai_max > ai_min:
                  acoustic_impedance = (acoustic_impedance - ai_min) / (ai_max - ai_min)

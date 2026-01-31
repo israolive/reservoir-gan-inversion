@@ -276,30 +276,37 @@ def analyze_metrics(input_folder, data_dir, output_dir):
     print("Plotting Histograms...")
     bins = np.linspace(ip_min, ip_max, 50)
     
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-    
     # Global
-    axes[0].hist(real_ip_all, bins=bins, density=True, alpha=0.5, label='Real', color='blue')
-    axes[0].hist(gen_ip_all, bins=bins, density=True, alpha=0.5, label='Generated', color='orange')
-    axes[0].set_title(f'Global IP Distribution\nWD={wd_global:.4f}')
-    axes[0].legend()
+    plt.figure(figsize=(6, 5))
+    plt.hist(real_ip_all, bins=bins, density=True, alpha=0.5, label='Reference co-simulated IP', color='blue')
+    plt.hist(gen_ip_all, bins=bins, density=True, alpha=0.5, label='Generated', color='orange')
+    plt.title(f'Global IP Distribution\nWD={wd_global:.4f}')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'hist_global.png'))
+    plt.close()
     
     # Facies 0
-    axes[1].hist(real_ip_f0, bins=bins, density=True, alpha=0.5, label='Real', color='blue')
-    axes[1].hist(gen_ip_f0, bins=bins, density=True, alpha=0.5, label='Generated', color='orange')
-    axes[1].set_title(f'IP | Facies 0\nWD={wd_f0:.4f}')
-    axes[1].legend()
+    plt.figure(figsize=(6, 5))
+    plt.hist(real_ip_f0, bins=bins, density=True, alpha=0.5, label='Reference co-simulated IP', color='blue')
+    plt.hist(gen_ip_f0, bins=bins, density=True, alpha=0.5, label='Generated', color='orange')
+    plt.title(f'IP | Facies 0\nWD={wd_f0:.4f}')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'hist_facies0.png'))
+    plt.close()
     
     # Facies 1
-    axes[2].hist(real_ip_f1, bins=bins, density=True, alpha=0.5, label='Real', color='blue')
-    axes[2].hist(gen_ip_f1, bins=bins, density=True, alpha=0.5, label='Generated', color='orange')
-    axes[2].set_title(f'IP | Facies 1\nWD={wd_f1:.4f}')
-    axes[2].legend()
-    
+    plt.figure(figsize=(6, 5))
+    plt.hist(real_ip_f1, bins=bins, density=True, alpha=0.5, label='Reference co-simulated IP', color='blue')
+    plt.hist(gen_ip_f1, bins=bins, density=True, alpha=0.5, label='Generated', color='orange')
+    plt.title(f'IP | Facies 1\nWD={wd_f1:.4f}')
+    plt.legend()
     plt.tight_layout()
-    plot_path = os.path.join(output_dir, 'metrics_histograms.png')
-    plt.savefig(plot_path)
-    print(f"Histogram plot saved to {plot_path}")
+    plt.savefig(os.path.join(output_dir, 'hist_facies1.png'))
+    plt.close()
+    
+    print(f"Histograms saved to {output_dir}")
     
     # Save Text Report
     with open(os.path.join(output_dir, 'metrics_report.txt'), 'w') as f:
